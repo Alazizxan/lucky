@@ -165,7 +165,7 @@ export default function Home() {
               </div>
             ) : showPaymentError ? (
               <div className={styles.errorOverlay}>
-                <p className={styles.errorText}>You didn't make the payment! Please try again.</p>
+                <p className={styles.errorText}>You did not make the payment! Please try again.</p>
               </div>
             ) : (
               <>
