@@ -1,101 +1,191 @@
-import Image from "next/image";
+'use client'
+import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
+import Image from 'next/image';
+import styles from './Home.module.css';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [view, setView] = useState('container');
+  const [multiplier, setMultiplier] = useState(1.00);
+  const [timeLeft, setTimeLeft] = useState(120);
+  const [showSubscribe, setShowSubscribe] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
+  const [showPaymentError, setShowPaymentError] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+
+  useEffect(() => {
+    let interval;
+    if (view === 'loading') {
+      interval = setInterval(() => {
+        setMultiplier((prev) => {
+          if (prev >= 1.30) {
+            clearInterval(interval);
+            setShowLoading(true);
+            setTimeout(() => {
+              setShowLoading(false);
+              setMultiplier(1.00);
+              setShowSubscribe(true);
+            }, 4000);
+            return prev;
+          }
+          return parseFloat((prev + 0.01).toFixed(2));
+        });
+      }, 20);
+    }
+    return () => clearInterval(interval);
+  }, [view]);
+
+  useEffect(() => {
+    let interval;
+    if (view === 'payment' && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setView('container');
+    }
+    return () => clearInterval(interval);
+  }, [view, timeLeft]);
+
+  const getSignal = () => {
+    setView('loading');
+    setShowSubscribe(false);
+    setShowLoading(false);
+    setMultiplier(1.00);
+  };
+
+  const showPlans = () => {
+    setView('plans');
+  };
+
+
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
+  };
+
+  const goBack = () => {
+    setView('container');
+    setShowSubscribe(false);
+    setShowLoading(false);
+    setMultiplier(1.00);
+    setShowPaymentError(false);
+  };
+
+  const confirmPayment = () => {
+    setShowLoading(true);
+    setTimeout(() => {
+      setShowLoading(false);
+      setShowPaymentError(true);
+      setTimeout(() => {
+        setShowPaymentError(false);
+        goBack();
+      }, 3000);
+    }, 3000);
+  };
+
+  const selectPlan = (plan) => {
+    setSelectedPlan(plan);
+    setPaymentAmount(plan === 'weekly' ? 5 : 20);
+    setView('payment');
+    setTimeLeft(120);
+  };
+
+
+  return (
+    <div className={styles.container}>
+      <Head>
+        <title>Lucky Jet</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <main className={styles.main}>
+        {view === 'container' && (
+          <div className={styles.content}>
+            <h1>
+              <span>Hack Prediction</span>
+              <span className={styles.botText}>Bot</span>
+            </h1>
+            <Image src="/lucky.jpg" alt="Lucky Jet" width={300} height={200} className={styles.imagePlac} />
+            <p className={styles.info}>Get your lucky signals and subscribe for more information!</p>
+            <div className={styles.buttonContainer}>
+              <button className={styles.button} onClick={getSignal}>Get Signal</button>
+              <button className={styles.button} onClick={showPlans}>Subscribe</button>
+            </div>
+          </div>
+        )}
+
+        {view === 'loading' && (
+          <div className={styles.loading}>
+            <h2 className={styles.letsHack}>Let's Hack</h2>
+            <div className={styles.multiplierCircle}>
+              {showLoading ? (
+                <span className={styles.loadingText}>Loading<span className={styles.dots}>...</span></span>
+              ) : (
+                <span className={multiplier === 1.00 && showSubscribe ? styles.redMultiplier : ''}>
+                  x{multiplier.toFixed(2)}
+                </span>
+              )}
+            </div>
+            {showSubscribe && (
+              <>
+                <p className={styles.subscribeText}>
+                  Get a subscribe
+                  <span className={styles.dots}>...</span>
+                </p>
+                <button className={styles.backButton} onClick={goBack}>Back to Menu</button>
+              </>
+            )}
+          </div>
+        )}
+
+        {view === 'plans' && (
+          <div className={styles.plans}>
+            <h2>Select a Plan</h2>
+            <div className={styles.plan} onClick={() => selectPlan('weekly')}>
+              <h3>Weekly Plan for $5</h3>
+              <p>Get access to premium signals for one week</p>
+            </div>
+            <div className={styles.plan} onClick={() => selectPlan('monthly')}>
+              <h3>Monthly Plan for $20</h3>
+              <p>Get access to premium signals for one month</p>
+            </div>
+          </div>
+        )}
+
+        {view === 'payment' && (
+          <div className={styles.paymentInfo}>
+            {showLoading ? (
+              <div className={styles.loadingOverlay}>
+                <span className={styles.loadingText}>Loading<span className={styles.dots}>...</span></span>
+              </div>
+            ) : showPaymentError ? (
+              <div className={styles.errorOverlay}>
+                <p className={styles.errorText}>You didn't make the payment! Please try again.</p>
+              </div>
+            ) : (
+              <>
+                <h1 className={styles.paymentTitle}>Payment Information</h1>
+                <p>Please send the payment to the following USDT (<span className={styles.trc20}>TRC20</span>) address:</p>
+                <div className={styles.cryptoAddress} onClick={() => copyToClipboard('TPforvRe4vhsbMiRsoCTzXGgmMvXxoGph6')}>
+                  TPforvRe4vhsbMiRsoCTzXGgmMvXxoGph6
+                  <span className={styles.copyIcon}>📋</span>
+                </div>
+                <p>Time left to complete the payment:</p>
+                <div className={styles.timer}>
+                  {`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`}
+                </div>
+                <p>Please send ${paymentAmount} worth of USDT (<span className={styles.trc20}>TRC20</span>) to the address above within 2 minutes.</p>
+                <button className={styles.confirmButton} onClick={confirmPayment}>Confirm Payment</button>
+              </>
+            )}
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
